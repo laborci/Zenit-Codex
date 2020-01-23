@@ -14,8 +14,10 @@ use Zenit\Bundle\Codex\Component\Action\CodexMenu;
 use Zenit\Bundle\Codex\Component\Action\CodexSaveFormItem;
 use Zenit\Bundle\Codex\Component\Codex\AdminRegistry;
 use Zenit\Bundle\Codex\Component\Page\Index;
+use Zenit\Bundle\Codex\Config;
 use Zenit\Bundle\Codex\Interfaces\CodexWhoAmIInterface;
 use Zenit\Bundle\Mission\Component\Web\WebMission;
+use Zenit\Bundle\Mission\Constant\RoutingEvent;
 use Zenit\Bundle\SmartPageResponder\Component\Twigger\Twigger;
 use Zenit\Core\Event\Component\EventManager;
 use Zenit\Core\Module\Interfaces\ModuleInterface;
@@ -27,10 +29,12 @@ class Codex implements ModuleInterface{
 
 	/** @var \Zenit\Bundle\Codex\Component\Codex\AdminRegistry */
 	private $adminRegistry;
-	protected $env;
+	protected $moduleConfig;
+	protected $config;
 
-	public function __construct(AdminRegistry $adminRegistry){
+	public function __construct(AdminRegistry $adminRegistry, Config $config){
 		$this->adminRegistry = $adminRegistry;
+		$this->config = $config;
 	}
 
 	protected $menu;
@@ -43,24 +47,24 @@ class Codex implements ModuleInterface{
 	];
 	public function getAdmin(): array{ return $this->admin; }
 
-	public function getEnv(){ return $this->env; }
+	public function getEnv(){ return $this->moduleConfig; }
 
-	public function load($env){
-		$this->env = $env;
-		ServiceContainer::shared(CodexWhoAmIInterface::class)->service($env['services']['WhoAmI']);
+	public function load($moduleConfig){
+		$this->moduleConfig = $moduleConfig;
+		ServiceContainer::shared(CodexWhoAmIInterface::class)->service($moduleConfig['services']['WhoAmI']);
 
-		if (array_key_exists('menu', $env)) $this->menu = $env['menu'];
-		if (array_key_exists('admin', $env)) $this->admin = $env['admin'];
-		EventManager::listen(WebMission::EVENT_ROUTING_FINISHED, [$this, 'route']);
+		if (array_key_exists('menu', $moduleConfig)) $this->menu = $moduleConfig['menu'];
+		if (array_key_exists('admin', $moduleConfig)) $this->admin = $moduleConfig['admin'];
+		EventManager::listen(RoutingEvent::FINISHED, [$this, 'route']);
 		EventManager::listen(Twigger::EVENT_TWIG_ENVIRONMENT_CREATED, function (){
 			Twigger::Service()->addPath(__DIR__ . '/Resource/twig/', 'codex');
 		});
-		if (array_key_exists('codex-forms', $env)) foreach ($env['codex-forms'] as $form) $this->register($form);
+		if (array_key_exists('codex-forms', $moduleConfig)) foreach ($moduleConfig['codex-forms'] as $form) $this->register($form);
 	}
 
 	public function route(Router $router){
 		// PAGES
-		$router->get(env('thumbnail.url') . '/*', ThumbnailResponder::class)();
+		$router->get($this->config->thumbnailUrl . '/*', ThumbnailResponder::class)();
 		$router->get("/", Index::class)();
 
 		$router->clearPipeline();

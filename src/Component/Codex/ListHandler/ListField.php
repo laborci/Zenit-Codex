@@ -2,9 +2,7 @@
 
 use Zenit\Bundle\Codex\Interfaces\DictionaryInterface;
 class ListField implements \JsonSerializable{
-
-	const FIELD_TYPE_TEXT = 'text';
-
+	
 	private $name;
 	private $label;
 	private $sortable = true;
