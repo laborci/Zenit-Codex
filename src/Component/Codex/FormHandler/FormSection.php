@@ -2,6 +2,7 @@
 
 use Zenit\Bundle\Codex\Component\Codex\AdminDescriptor;
 use JsonSerializable;
+use Zenit\Bundle\Codex\Component\Codex\Field;
 
 class FormSection implements JsonSerializable{
 	/** @var \Zenit\Bundle\Codex\Component\Codex\FormHandler\FormInput[] */
@@ -14,11 +15,11 @@ class FormSection implements JsonSerializable{
 		$this->adminDescriptor = $adminDescriptor;
 	}
 
-	public function input($type, $field, $label = null){
+	public function input($type, Field $field, $label = null){
 		if (is_null($label)){
-			$label = $this->adminDescriptor->getFieldLabel($field);
+			$label = $field->label;
 		}
-		$input = new FormInput($type, $label, $field);
+		$input = new FormInput($type, $label, $field->name);
 		$this->inputs[] = $input;
 		return $input;
 	}

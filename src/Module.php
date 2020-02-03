@@ -1,5 +1,7 @@
-<?php namespace Zenit\Bundle\Codex\Module;
+<?php namespace Zenit\Bundle\Codex;
 
+use Application\AdminCodex\Codex;
+use Application\AdminCodex\CodexInit;
 use Zenit\Bundle\Codex\Component\Action\CodexAttachmentCopy;
 use Zenit\Bundle\Codex\Component\Action\CodexAttachmentDelete;
 use Zenit\Bundle\Codex\Component\Action\CodexAttachmentGet;
@@ -16,21 +18,26 @@ use Zenit\Bundle\Codex\Component\Codex\AdminRegistry;
 use Zenit\Bundle\Codex\Component\Page\Index;
 use Zenit\Bundle\Codex\Config;
 use Zenit\Bundle\Codex\Interfaces\CodexWhoAmIInterface;
+use Zenit\Bundle\Mission\Component\Web\Routing\Router;
 use Zenit\Bundle\Mission\Component\Web\WebMission;
 use Zenit\Bundle\Mission\Constant\RoutingEvent;
 use Zenit\Bundle\SmartPageResponder\Component\Twigger\Twigger;
+use Zenit\Bundle\Zuul\Component\Auth\Action\Login;
+use Zenit\Bundle\Zuul\Component\Auth\Action\Logout;
+use Zenit\Bundle\Zuul\Component\Auth\Middleware\AuthCheck;
+use Zenit\Bundle\Zuul\Component\Auth\Middleware\RoleCheck;
 use Zenit\Core\Event\Component\EventManager;
 use Zenit\Core\Module\Interfaces\ModuleInterface;
-use Zenit\Bundle\Mission\Module\Web\Routing\Router;
 use Zenit\Core\ServiceManager\Component\ServiceContainer;
 use Zenit\Bundle\Ghost\Thumbnail\Component\ThumbnailResponder;
 
-class Codex implements ModuleInterface{
+class Module implements ModuleInterface{
 
 	/** @var \Zenit\Bundle\Codex\Component\Codex\AdminRegistry */
 	private $adminRegistry;
 	protected $moduleConfig;
 	protected $config;
+	protected $initializer;
 
 	public function __construct(AdminRegistry $adminRegistry, Config $config){
 		$this->adminRegistry = $adminRegistry;
@@ -38,23 +45,23 @@ class Codex implements ModuleInterface{
 	}
 
 	protected $menu;
-	public function getMenu(){ return $this->menu; }
+	public function getMenu(){ return $this->initializer->getMenu(); }
 
-	protected $admin = [
-		'title'             => 'Codex2',
-		'icon'              => 'fal fa-infinite',
-		'login-placeholder' => 'e-mail',
-	];
-	public function getAdmin(): array{ return $this->admin; }
+	public function getAdmin(): array{ return [
+		'title'             => $this->initializer->title,
+		'icon'              => $this->initializer->icon,
+		'login-placeholder' => $this->initializer->loginPlaceholder
+	]; }
 
 	public function getEnv(){ return $this->moduleConfig; }
 
 	public function load($moduleConfig){
-		$this->moduleConfig = $moduleConfig;
 		ServiceContainer::shared(CodexWhoAmIInterface::class)->service($moduleConfig['services']['WhoAmI']);
 
-		if (array_key_exists('menu', $moduleConfig)) $this->menu = $moduleConfig['menu'];
-		if (array_key_exists('admin', $moduleConfig)) $this->admin = $moduleConfig['admin'];
+		$this->initializer = ServiceContainer::get($moduleConfig['initializer']);
+		$this->initializer->importForms($this->adminRegistry);
+
+		$this->moduleConfig = $moduleConfig;
 		EventManager::listen(RoutingEvent::FINISHED, [$this, 'route']);
 		EventManager::listen(Twigger::EVENT_TWIG_ENVIRONMENT_CREATED, function (){
 			Twigger::Service()->addPath(__DIR__ . '/Resource/twig/', 'codex');
@@ -63,11 +70,22 @@ class Codex implements ModuleInterface{
 	}
 
 	public function route(Router $router){
+
+		$router->post("/login", Login::class, ['role'=>$this->initializer->role])();
+		$router->pipe(AuthCheck::class, AuthCheck::config(\Zenit\Bundle\Codex\Component\Page\Login::class));
+		if ($this->initializer->role){
+			$router->pipe(RoleCheck::class, RoleCheck::config(\Zenit\Bundle\Codex\Component\Page\Login::class, $this->initializer->role, true));
+		}
+		$router->post("/logout", Logout::class)();
+		
+		
+		
 		// PAGES
 		$router->get($this->config->thumbnailUrl . '/*', ThumbnailResponder::class)();
 		$router->get("/", Index::class)();
 
 		$router->clearPipeline();
+		
 		// API AUTH
 //		$router->pipe(AuthCheck::class, ["responder" => NotAuthorized::class]);
 //		$router->pipe(PermissionCheck::class, ["responder" => Forbidden::class, "permission" => "admin"]);

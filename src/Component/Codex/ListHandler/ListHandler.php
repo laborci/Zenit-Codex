@@ -2,6 +2,7 @@
 
 use JsonSerializable;
 use Zenit\Bundle\Codex\Component\Codex\AdminDescriptor;
+use Zenit\Bundle\Codex\Component\Codex\Field;
 use Zenit\Bundle\Codex\Interfaces\DataProviderInterface;
 use Zenit\Bundle\Codex\Interfaces\FilterCreatorInterface;
 use Zenit\Bundle\Codex\Interfaces\ItemConverterInterface;
@@ -38,14 +39,14 @@ class ListHandler implements JsonSerializable{
 	}
 
 	public function setPageSize(int $pageSize){ $this->pageSize = $pageSize; }
-	public function addJSPlugin($plugin){ $this->JSplugins[] = $plugin; }
+	public function addJSPlugin(...$plugins){ foreach ($plugins as $plugin) $this->JSplugins[] = $plugin; }
 	public function setIdField($field){ $this->idField = $field; }
 	public function setItemConverter(ItemConverterInterface $itemConverter){ $this->itemConverter = $itemConverter; }
 	public function setFilterCreator(FilterCreatorInterface $filterCreator){ $this->filterCreator = $filterCreator; }
 
-	public function add($name, $label = null): ListField{
-		if (is_null($label)) $label = !is_null($this->admin->getFieldLabel($name)) ? $this->admin->getFieldLabel($name) : $name;
-		$field = new ListField($name, $label);
+	public function add(Field $field, $label = null): ListField{
+		if (is_null($label)) $label = $field->label;
+		$field = new ListField($field->name, $label);
 		$this->fields[] = $field;
 		return $field;
 	}
@@ -59,7 +60,16 @@ class ListHandler implements JsonSerializable{
 		foreach ($rows as $key => $row){
 			$rows[$key] = [];
 			foreach ($this->fields as $field){
-				if (!$field->isClientOnly()) $rows[$key][$field->getName()] = ($dictionary = $field->getDictionary()) ? $dictionary($row[$field->getName()]) : $row[$field->getName()];
+				if (!$field->isClientOnly()){
+					if(is_array($row[$field->getName()])){
+						$value = [];
+						foreach ($row[$field->getName()] as $v){
+							$value[] = ($dictionary = $field->getDictionary()) ? $dictionary($v) : $v;
+						}
+						$rows[$key][$field->getName()] = join(', ', $value);
+					}
+					else $rows[$key][$field->getName()] = ($dictionary = $field->getDictionary()) ? $dictionary($row[$field->getName()]) : $row[$field->getName()];
+				}
 			}
 		}
 		return new ListingResult($rows, $count, $page);

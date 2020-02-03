@@ -4,9 +4,7 @@ use Zenit\Bundle\Codex\Component\Codex\AdminDescriptor;
 use Throwable;
 
 class CodexAttachmentUpload extends Responder{
-
-	protected function getRequiredPermissionType(): ?string{ return AdminDescriptor::PERMISSION; }
-
+	
 	protected function codexRespond(): ?array{
 		$formHandler = $this->adminDescriptor->getFormHandler();
 		try{

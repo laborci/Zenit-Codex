@@ -2,6 +2,7 @@
 
 use JsonSerializable;
 use Zenit\Bundle\Codex\Component\Codex\AdminDescriptor;
+use Zenit\Bundle\Codex\Component\Codex\Field;
 use Zenit\Bundle\Codex\Interfaces\ItemConverterInterface;
 use Zenit\Bundle\Codex\Interfaces\ItemDataImporterInterface;
 class FormHandler implements JsonSerializable{
@@ -33,12 +34,12 @@ class FormHandler implements JsonSerializable{
 		$this->itemDataImporter = $this->dataProvider;
 	}
 
-	public function addAttachmentCategory($category, $label){
-		$this->attachmentCategories[$category] = $label;
+	public function addAttachmentCategory(Field $category){
+		$this->attachmentCategories[$category->name] = $category->label;
 	}
 
-	public function addJSPlugin($plugin){ $this->JSplugins[] = $plugin; }
-	public function setLabelField($field){ $this->labelField = $field; }
+	public function addJSPlugin(...$plugins){ foreach ($plugins as $plugin) $this->JSplugins[] = $plugin; }
+	public function setLabelField(Field $field){ $this->labelField = $field->name; }
 	public function setItemConverter(ItemConverterInterface $itemConverter){ $this->itemConverter = $itemConverter; }
 	public function setItemDataImporter(ItemDataImporterInterface $itemDataImporter){ $this->itemDataImporter = $itemDataImporter; }
 
@@ -49,12 +50,15 @@ class FormHandler implements JsonSerializable{
 	}
 
 	public function jsonSerialize(){
+
+		$formDecorator = $this->admin->getDecorator();
+
 		return [
 			'sections'             => $this->sections,
 			'plugins'              => $this->JSplugins,
 			'labelField'           => $this->labelField,
-			'tabIcon'              => $this->admin->getTabIcon(),
-			'formIcon'             => $this->admin->getFormIcon(),
+			'tabIcon'              => $formDecorator->getIconTab(),
+			'formIcon'             => $formDecorator->getIconForm(),
 			'attachmentCategories' => $this->attachmentCategories,
 		];
 	}

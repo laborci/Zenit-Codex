@@ -3,9 +3,7 @@
 use Zenit\Bundle\Codex\Component\Codex\AdminDescriptor;
 
 class CodexGetList extends Responder{
-
-	protected function getRequiredPermissionType(): ?string{ return AdminDescriptor::PERMISSION; }
-
+	
 	protected function codexRespond(): ?array{
 		$page = $this->getPathBag()->get('page', 1);
 		$sort = $this->getJsonParamBag()->get('sort');

@@ -1,7 +1,7 @@
 <?php namespace Zenit\Bundle\Codex\Component\Page;
 
 use Zenit\Bundle\Codex\Interfaces\CodexWhoAmIInterface;
-use Zenit\Bundle\Codex\Module\Codex;
+use Zenit\Bundle\Codex\Module;
 use Zenit\Bundle\SmartPageResponder\Component\Responder\SmartPageResponder;
 use Zenit\Core\Module\Component\ModuleLoader;
 
@@ -13,12 +13,12 @@ class Index extends SmartPageResponder {
 
 	private $whoAmI;
 
-	/** @var \Zenit\Bundle\Codex\Module\Codex  */
+	/** @var \Zenit\Bundle\Codex\Module  */
 	protected $module;
 
 	public function __construct(CodexWhoAmIInterface $whoAmI, ModuleLoader $moduleLoader) {
 		parent::__construct();
-		$this->module = $moduleLoader->get(Codex::class);
+		$this->module = $moduleLoader->get(Module::class);
 		$this->css = [$this->module->getEnv()['frontend-prefix'].'app.css'];
 		$this->js = [$this->module->getEnv()['frontend-prefix'].'app.js'];
 		$this->whoAmI = $whoAmI;

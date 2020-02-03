@@ -8,16 +8,15 @@ class AdminRegistry implements SharedService{
 
 	protected $admins = [];
 
-	public function registerForm($form, $config=null){
-		$this->admins[(new \ReflectionClass($form))->getShortName()] = ['form'=>$form, 'config'=>$config];
+	public function registerForm($form){
+		$this->admins[(new \ReflectionClass($form))->getShortName()] = $form;
 	}
 
 	public function get($name):AdminDescriptor{
 		/** @var \Zenit\Bundle\Codex\Component\Codex\AdminDescriptor $form */
 		/** @var \Zenit\Bundle\Codex\Component\Codex\AdminDescriptor $codex */
-		$form = $this->admins[$name]['form'];
+		$form = $this->admins[$name];
 		$codex = $form::Service();
-		$codex->setConfig($this->admins[$name]['config']);
 		return $codex;
 	}
 }
