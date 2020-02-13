@@ -17,7 +17,7 @@ class GhostDataProvider implements DataProviderInterface{
 	}
 
 	public function getList($page, $sorting, $filter, $pageSize, &$count): array{
-		$finder = $this->model->repository->search()->orderIf(!is_null($sorting), $sorting['field'] . ' ' . $sorting['dir']);
+		$finder = $this->model->repository->search($this->createFilter($filter))->orderIf(!is_null($sorting), $sorting['field'] . ' ' . $sorting['dir']);
 		return $finder->collectPage($pageSize, $page, $count);
 	}
 
@@ -26,7 +26,7 @@ class GhostDataProvider implements DataProviderInterface{
 		return $item->export();
 	}
 
-	public function createFilter($filter){ return null; }
+	public function createFilter($filter=null){ return null; }
 
 	public function getItem($id): ?Ghost{ return $this->model->repository->pick($id); }
 
