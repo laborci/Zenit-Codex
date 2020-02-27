@@ -8,6 +8,7 @@ class FormInput implements JsonSerializable{
 	protected $label;
 	protected $field;
 	protected $options;
+	protected $validators = [];
 
 	public function __construct($type, $label, $field, $options = []){
 		$this->type = $type;
@@ -25,12 +26,18 @@ class FormInput implements JsonSerializable{
 		return $this;
 	}
 
+	public function addValidator(Validator $validator){
+		$this->validators[] = $validator;
+		return $this;
+	}
+
 	public function jsonSerialize(){
 		return [
 			'type'    => $this->type,
 			'label'   => $this->label,
 			'field'   => $this->field,
 			'options' => $this->options,
+			'validators'=>$this->validators
 		];
 	}
 
